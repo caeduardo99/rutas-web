@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Fecha actual -->
+<script>
+  function mostrarFechaHoraMinutosActuales() {
+    var fechaHora = new Date();
+    var fecha = fechaHora.toLocaleDateString();
+    var hora = fechaHora.getHours();
+    var minutos = fechaHora.getMinutes();
+    var fechaHoraMinutosActual = fecha + ' ' + ('0' + hora).slice(-2) + ':' + ('0' + minutos).slice(-2);
+    document.getElementById("fecha-hora-actual").textContent = fechaHoraMinutosActual;
+  }
+
+  // Actualizar la fecha, hora y minutos cada segundo
+  setInterval(mostrarFechaHoraMinutosActuales, 1000);
+</script>
+
+<!-- Css -->
+<style>
+
+  .ocultar_grafico { 
+          display: none; 
+      } 
+
+  .mostrar_grafico { 
+        display: block; 
+  } 
+  #loader-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(255, 255, 255);
+    z-index: 9999;
+  }
+
+  /* Estilos para el spinner de carga */
+  .loader {
+    /* width: 100%;
+        height: 100%;
+        background-image: url('../static/rutas_vendedor/images/mapas.gif'); */
+    background-repeat: no-repeat;
+    background-position: center;
+    animation: spin 5s linear infinite;
+    width: 750px;
+    height: auto;
+  }
+
+  /* Estilos para el spinner de carga en dispositivos iPhone */
+  @media only screen and (max-width: 575px) {
+    .loader {
+      width: 500px;
+      height: auto;
+    }
+
+  }
+
+  .card {
+    color: white;
+    padding: 10px;
+  }
+
+  .card-color-1 {
+    background-color: #00A86B;
+    /* Rojo */
+  }
+
+  .card-color-2 {
+    background-color: #FF8C00;
+    /* Verde */
+  }
+
+  .card-color-3 {
+    background-color: #FF8C00;
+    /* Azul */
+  }
+
+  .form-label {
+    color: #343A40;
+    /* Azul */
+    font-weight: bold;
+  }
+
+  .form-select {
+    border: 2px solid #343A40;
+    /* Azul */
+    border-radius: 5px;
+  }
+
+  .form-control {
+    border: 2px solid #343A40;
+    /* Azul */
+    border-radius: 5px;
+  }
+
+  .btn-primary {
+    border: 2px solid #0047AB;
+    background-color: #0047AB;
+    /* Azul */
+    border-radius: 5px;
+  }
+
+  .btn-primary:hover {
+    background-color: #002E7A;
+    /* Azul oscuro */
+  }
+</style>
+
+<!-- Loader -->
+<div id="loader-container">
+  <img class="loader" src="https://i.pinimg.com/originals/d7/ae/01/d7ae0170d3d5ffcbaa7f02fdda387a3b.gif" />
+</div>
+
+<body>
+<div class="container mt-5 mb-4 ">
+
+    <br>
+    <h1 class="text-center mb-3">Mapa de Visitas</h1>
+    <div class="row">
+      {% if fecha %}
+      <div class="col text-start">
+        <p class="fw-bold fs-5"><i class="fas fa-calendar-alt me-2"></i>Consulta de la Vista: {{fecha}}</p>
+      </div>
+      {% endif %}
+
+      <div class="col text-end">
+        <p class="fw-bold fs-5"><i class="fas fa-clock me-2"></i>Fecha Actual: <span id="fecha-hora-actual"></span></p>
+      </div>
+    </div>
+    <br>
+
+    <div id="estadisticas-vendedores" class="row row-cols-1 row-cols-md-5 g-4">
+      {% for vendedor, estadisticas in estadisticas_vendedores.items %}
+      {% cycle colors as color %}
+      <div class="col ">
+        <div class="card  card-color-{{ forloop.counter }} card-sm">
+          <div class="card-body card-body-small ">
+            <h5 class="card-title">{{ vendedor }}</h5>
+
+            <button type="button" class="btn btn-dark btn-sm text-end" data-bs-toggle="modal"
+              data-bs-target="#modal-{{ forloop.counter }}"><i class="fa-solid fa-circle-info"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal -->
+      <div class="modal fade" id="modal-{{ forloop.counter }}" tabindex="-1" role="dialog"
+        aria-labelledby="modal-{{ forloop.counter }}-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+          <div class="modal-content">
+            <div class="modal-header card-color-{{ forloop.counter }} text-white">
+              <h5 class="modal-title"><i class="fa-solid fa-user me-2"></i>{{ vendedor }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <canvas class="ocultar_grafico" id="modalChart-{{ forloop.counter }}"></canvas>
+              <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Visitas: {{ estadisticas.visitas }}</p>
+              <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Pedidos: ${{ estadisticas.monto_pedido }}
+              </p>
+              <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Cobros: ${{ estadisticas.monto_cobro }}
+                <a class="btn btn-primary item_btn" id="item_btn" role="button">Grafico</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Script para graficar datos modal -->
+      <script>
+        // Obtener los datos del modal y organizarlos
+        var visitas = '{{ estadisticas.visitas }}';
+        var montoPedido = '{{ estadisticas.monto_pedido }}';
+        var montoCobro = '{{ estadisticas.monto_cobro }}';
+
+        // Crear el gráfico utilizando Chart.js
+        var ctx = document.getElementById('modalChart-{{ forloop.counter }}').getContext('2d');
+        var modalChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Visitas', 'Pedidos', 'Cobros'],
+            datasets: [{
+              label: 'Estadísticas',
+              data: [visitas, montoPedido, montoCobro],
+              backgroundColor: [
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)'
+              ],
+              borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                precision: 0
+              }
+            }
+          }
+        });
+      </script>
+      {% endfor %}
+    </div>
+
+    <form id="busquedaForm" action="/rutas" method="get" class="row g-3 mt-3">
+      <div class="col-md-4">
+        <label for="busquedaFecha" class="form-label">Fecha de Visitas</label>
+        <input type="date" class="form-control" id="busquedaFecha" name="fecha" value="{{ request.GET.fecha }}">
+      </div>
+      <div class="col-md-4">
+        <label for="busquedaVendedor" class="form-label">Vendedor</label>
+        <select class="form-select" id="busquedaVendedor" name="vendedor">
+          <option value="">Todos los vendedores</option>
+          {% for vendedor in vendedores %}
+          <option value="{{ vendedor }}" {% if selected_vendedor == vendedor %}selected{% endif %}>{{ vendedor }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100" onclick="showLoader()">Buscar</button>
+      </div>
+    </form>
+
+    <div class="row mt-4">
+      <div class="col">
+        <div id="map" style="height: 500px;"></div>
+      </div>
+    </div>
+</div>
+
+  <!-- Loader -->
+  <script>
+    // LOADER
+    // Muestra el spinner de carga antes de descargar la página
+    window.addEventListener('beforeunload', function () {
+      showLoader();
+    });
+
+    // Espera a que se cargue completamente la página
+    window.addEventListener('DOMContentLoaded', function () {
+      // Oculta el spinner de carga después de 5 segundos
+      setTimeout(hideLoader, 1500);
+    });
+
+    // Función para mostrar el spinner de carga
+    function showLoader() {
+      var loaderContainer = document.getElementById('loader-container');
+      loaderContainer.style.display = 'flex';
+    }
+
+    // Función para ocultar el spinner de carga
+    function hideLoader() {
+      var loaderContainer = document.getElementById('loader-container');
+      loaderContainer.style.display = 'none';
+    }
+  </script>
+
+  <!-- Generar Rutas -->
+  <script>
+    window.onload = function () {
+      var map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -2.897883, lng: -79.004273 },
+        zoom: 12
+      });
+
+      var visitas = JSON.parse('{{ resultados_visitas|safe }}');
+
+      console.log(visitas)
+
+      // Filtrar visitas por vendedor y agrupar por fecha y vendedor
+      var visitasPorFechaVendedor = {};
+      visitas.forEach(function (visita) {
+        var fechaVisita = new Date(visita.FechaVisita / 1000 * 1000);
+        fechaVisita.setHours(fechaVisita.getHours() + 5); // Ajustar a UTC-05:00
+
+        var fechaIngreso = new Date(visita.ingreso);
+        fechaIngreso.setHours(fechaIngreso.getHours() + 5); // Ajustar a UTC-05:00
+
+        var fechaVendedorKey = fechaVisita.toLocaleDateString() + '|' + visita.Vendedor;
+
+        if (!visitasPorFechaVendedor[fechaVendedorKey]) {
+          visitasPorFechaVendedor[fechaVendedorKey] = [];
+        }
+        visitasPorFechaVendedor[fechaVendedorKey].push({
+          position: { lat: parseFloat(visita.LatVisita), lng: parseFloat(visita.LonVisita) },
+          vendedor: visita.Vendedor,
+          fechaVisita: fechaVisita,
+          fechaIngreso: fechaIngreso,
+          observaciones: visita.observaciones,
+          accion: visita.accion,
+          monto: visita.monto
+        });
+      });
+
+      // Recorrer cada fecha y vendedor y trazar la ruta correspondiente
+      Object.keys(visitasPorFechaVendedor).forEach(function (fechaVendedorKey, index) {
+        var visitasDelDiaVendedor = visitasPorFechaVendedor[fechaVendedorKey];
+
+        // Crear un array de LatLng para las visitas del día y vendedor
+        var visitasLatLng = visitasDelDiaVendedor.map(function (visita) {
+          return {
+            position: visita.position,
+            vendedor: visita.vendedor,
+            fechaVisita: visita.fechaVisita,
+            fechaIngreso: visita.fechaIngreso,
+            observaciones: visita.observaciones,
+            accion: visita.accion,
+            monto: visita.monto
+          };
+        });
+
+        console.log('Visitas LatLng:', visitasLatLng);
+
+        // Trazar la ruta utilizando DirectionsService
+        if (visitasLatLng.length > 1) {
+          var directionsService = new google.maps.DirectionsService();
+          var directionsDisplay = new google.maps.DirectionsRenderer({
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: getLineColor(index),
+              strokeOpacity: 0.8,
+              strokeWeight: 4
+            }
+          });
+
+          directionsDisplay.setMap(map);
+
+          var waypoints = visitasLatLng.slice(1, -1).map(function (waypoint) {
+            return {
+              location: waypoint.position,
+              stopover: true
+            };
+          });
+
+          var request = {
+            origin: visitasLatLng[0].position,
+            destination: visitasLatLng[visitasLatLng.length - 1].position,
+            waypoints: waypoints,
+            optimizeWaypoints: true,
+            travelMode: google.maps.TravelMode.DRIVING
+          };
+
+          directionsService.route(request, function (result, status) {
+            if (status == google.maps.DirectionsStatus.OK) {
+              directionsDisplay.setDirections(result);
+
+              var route = result.routes[0];
+              var legs = route.legs;
+
+              legs.forEach(function (leg, index) {
+                var marker = new google.maps.Marker({
+                  position: leg.start_location,
+                  map: map,
+                  title: visitasLatLng[index].vendedor,
+                  icon: getMarkerIcon(visitasLatLng[index].vendedor)
+                });
+
+                var infowindow = new google.maps.InfoWindow({
+                  content: "<strong>Vendedor:</strong> " + visitasLatLng[index].vendedor + "<br><strong>Ingreso:</strong> " + visitasLatLng[index].fechaIngreso.toLocaleString() + "<br><strong>Salida:</strong> " + visitasLatLng[index].fechaVisita.toLocaleString() + "<br><strong>" + visitasLatLng[index].accion + ":</strong> " + visitasLatLng[index].monto + "<br><strong>Observaciones:</strong> " + visitasLatLng[index].observaciones
+                });
+
+                marker.addListener('click', function () {
+                  infowindow.open(map, marker);
+                });
+              });
+
+              // console.log(route)
+
+              var lastLeg = legs[legs.length - 1];
+              var lastMarker = new google.maps.Marker({
+                position: lastLeg.end_location,
+                map: map,
+                title: visitasLatLng[visitasLatLng.length - 1].vendedor,
+                icon: getMarkerIcon(visitasLatLng[visitasLatLng.length - 1].vendedor)
+              });
+
+              var lastInfowindow = new google.maps.InfoWindow({
+                content: "<strong>Vendedor:</strong> " + visitasLatLng[visitasLatLng.length - 1].vendedor + "<br><strong>Ingreso:</strong> " + visitasLatLng[visitasLatLng.length - 1].fechaIngreso.toLocaleString() + "<br><strong>Salida:</strong> " + visitasLatLng[visitasLatLng.length - 1].fechaVisita.toLocaleString() + "<br><strong>" + visitasLatLng[visitasLatLng.length - 1].accion + ":</strong> " + visitasLatLng[visitasLatLng.length - 1].monto + "<br><strong>Observaciones:</strong> " + visitasLatLng[visitasLatLng.length - 1].observaciones
+              });
+
+
+              lastMarker.addListener('click', function () {
+                lastInfowindow.open(map, lastMarker);
+              });
+            }
+          });
+        }
+      });
+    }
+
+    function getLineColor(index) {
+      var colors = ['#00A86B', '#FF8C00', '#FF8C00'];
+      var colorIndex = index % colors.length;
+      return colors[colorIndex];
+    }
+
+    function getMarkerIcon(vendedor) {
+      var fillColor = '#800020';
+      return {
+        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+        scale: 8,
+        fillColor: fillColor,
+        fillOpacity: 1,
+        strokeColor: 'white',
+        strokeWeight: 2
+      };
+    }
+  </script>
+
+<script>
+  let readMore_btn = document.getElementById('item_btn') 
+  let hideText = document.getElementById('ocultar_grafico') 
+
+  function hideGrafico() { 
+        hideText.classList.toggle('mostrar_grafico') 
+        if (hideText.classList.contains('mostrar_grafico')) { 
+            item_btn.innerHTML = 'Ocultar Grafico' 
+        } else { 
+            item_btn.innerHTML = 'Grafico' 
+        } 
+    } 
+
+</script>
+  <!-- API GOOGLE -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDhaGul5FF8dpJI0y4pwyQ3hkzH8lBUlyE&libraries=places"
+    async defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+</body>
+{% endblock %}
