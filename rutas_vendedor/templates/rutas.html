@@ -22,13 +22,6 @@
 <!-- Css -->
 <style>
 
-  .ocultar_grafico { 
-          display: none; 
-      } 
-
-  .mostrar_grafico { 
-        display: block; 
-  } 
   #loader-container {
     position: fixed;
     top: 0;
@@ -161,12 +154,11 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-              <canvas class="ocultar_grafico" id="modalChart-{{ forloop.counter }}"></canvas>
+              <canvas id="modalChart-{{ forloop.counter }}"></canvas>
               <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Visitas: {{ estadisticas.visitas }}</p>
               <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Pedidos: ${{ estadisticas.monto_pedido }}
               </p>
               <p class="fw-bold"><i class="fa-solid fa-chart-simple me-2"></i>Cobros: ${{ estadisticas.monto_cobro }}
-                <a class="btn btn-primary item_btn" id="item_btn" role="button">Grafico</a>
               </p>
             </div>
           </div>
@@ -176,7 +168,7 @@
       <!-- Script para graficar datos modal -->
       <script>
         // Obtener los datos del modal y organizarlos
-        var visitas = '{{ estadisticas.visitas }}';
+        
         var montoPedido = '{{ estadisticas.monto_pedido }}';
         var montoCobro = '{{ estadisticas.monto_cobro }}';
 
@@ -185,10 +177,10 @@
         var modalChart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: ['Visitas', 'Pedidos', 'Cobros'],
+            labels: ['Pedidos', 'Cobros'],
             datasets: [{
               label: 'Estadísticas',
-              data: [visitas, montoPedido, montoCobro],
+              data: [ montoPedido, montoCobro],
               backgroundColor: [
                 'rgba(75, 192, 192, 0.2)',
                 'rgba(255, 99, 132, 0.2)',
@@ -420,18 +412,6 @@
     }
   </script>
 
-<script>
-  let readMore_btn = document.getElementById('item_btn') 
-  let hideText = document.getElementById('ocultar_grafico') 
-
-  function hideGrafico() { 
-        hideText.classList.toggle('mostrar_grafico') 
-        if (hideText.classList.contains('mostrar_grafico')) { 
-            item_btn.innerHTML = 'Ocultar Grafico' 
-        } else { 
-            item_btn.innerHTML = 'Grafico' 
-        } 
-    } 
 
 </script>
   <!-- API GOOGLE -->

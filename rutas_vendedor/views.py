@@ -80,7 +80,6 @@ def home(request):
     return HttpResponse(tabla_html)
 
 
-
 @login_required
 def mapa(request):
     fecha = request.GET.get('fecha')  # Obtener el valor del parámetro 'fecha' del request
@@ -151,3 +150,19 @@ def mapa(request):
 
     return HttpResponse(mapa_html)
 
+
+
+def vendedor(request):
+    with connection.cursor() as cursor:
+        # Ejecutar la consulta SQL
+        cursor.execute("select nombre ,CONVERT(VARCHAR(MAX), DECRYPTBYPASSPHRASE('0102070612aq',ruc)) as ruc  from pcprovcli where nombre LIKE %s", ['%'])
+        clientes = cursor.fetchall()
+
+        # clientes = json.dumps(clientes) 
+        # print(clientes)
+        
+
+
+    return render(request, 'vendedor.html', {
+        'clientes': clientes
+    })
