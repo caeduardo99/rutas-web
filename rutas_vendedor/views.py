@@ -9,11 +9,13 @@ from django.shortcuts import redirect
 from datetime import datetime
 from datetime import date
 
-
 @login_required
 def home(request):
-    
+    """
+    Vista de la página principal (home) del sistema.
+    """
     with connection.cursor() as cursor:
+        # Consulta para obtener los datos de las visitas
         query_visitas = '''
             SELECT
             FC.Nombre as Vendedor,
@@ -44,11 +46,11 @@ def home(request):
             LEFT JOIN PCProvCli PC ON CV.IdProvCli = PC.IdProvCli
             ORDER BY
             FC.Nombre,EstadoVisita;
-            '''
+        '''
         cursor.execute(query_visitas)
         resultados_visitas = cursor.fetchall()
         
-
+        # Consulta para obtener los datos de los vendedores
         query_vendedores = '''
             SELECT *
             FROM FCVendedor;
@@ -57,24 +59,19 @@ def home(request):
         resultados_vendedores = cursor.fetchall()
         
         username = request.user
-        print(request.user) 
+        
         # Convertir los resultados en un DataFrame
         columns = [column[0] for column in cursor.description]
-
-        # Crea el DataFrame con los resultados y las columnas
         df_vendedores = pd.DataFrame(resultados_vendedores, columns=columns)
         df_vendedores = df_vendedores.to_dict("records")
         
-
     # Renderizar la plantilla con los resultados
     template = loader.get_template('home.html')
     context = {
         'resultados_visitas': resultados_visitas,
         'df_vendedores': df_vendedores,
         'username': username
-      
     }
-
     tabla_html = template.render(context)
     # Retornar la respuesta HTTP
     return HttpResponse(tabla_html)
@@ -82,10 +79,16 @@ def home(request):
 
 @login_required
 def mapa(request):
+    """
+    Vista de la página del mapa de rutas.
+    """
     fecha = request.GET.get('fecha')  # Obtener el valor del parámetro 'fecha' del request
     vendedor = request.GET.get('vendedor')  # Obtener el valor del parámetro 'vendedor' del request
     
     def obtener_vendedores():
+        """
+        Función para obtener los nombres de los vendedores desde la base de datos.
+        """
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM FCVendedor")
             vendedores = [row[2] for row in cursor.fetchall()]
@@ -137,31 +140,29 @@ def mapa(request):
     else:
         df_mapa_json = '[]'
         estadisticas_vendedores = {}
-
+    username = request.user
     template = loader.get_template('rutas.html')
     context = {
         'resultados_visitas': df_mapa_json,
         'vendedores': obtener_vendedores(),
         'selected_vendedor': vendedor,
         'estadisticas_vendedores': estadisticas_vendedores,
-        'fecha' : fecha,
+        'fecha': fecha,
+        'username': username
     }
     mapa_html = template.render(context)
 
     return HttpResponse(mapa_html)
 
 
-
 def vendedor(request):
+    """
+    Vista para la página de vendedores.
+    """
     with connection.cursor() as cursor:
-        # Ejecutar la consulta SQL
+        # Ejecutar la consulta SQL para obtener los nombres y ruc de los clientes
         cursor.execute("select nombre ,CONVERT(VARCHAR(MAX), DECRYPTBYPASSPHRASE('0102070612aq',ruc)) as ruc  from pcprovcli where nombre LIKE %s", ['%'])
         clientes = cursor.fetchall()
-
-        # clientes = json.dumps(clientes) 
-        # print(clientes)
-        
-
 
     return render(request, 'vendedor.html', {
         'clientes': clientes
