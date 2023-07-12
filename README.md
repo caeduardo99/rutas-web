@@ -46,7 +46,3 @@ Puedes encontrar mucho más de cómo se estructura este proyecto en la [Wiki](ht
 
 * **Carlos Soria** - *Trabajo Inicial - Documentación* - [Carlos Soria](https://github.com/caeduardo99)
 
-
-
-
-https://github.com/caeduardo99/rutas-web/tree/main/sii_seguridad
