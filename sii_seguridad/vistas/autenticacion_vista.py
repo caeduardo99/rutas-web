@@ -7,6 +7,9 @@ from django.contrib.auth import logout as logout_django
 from sii_seguridad.formularios.autenticacion_form import LoginForm
 
 def login(request):
+    """
+    Vista para el inicio de sesión.
+    """
     message = None
     if request.user.is_authenticated:
         next = request.GET.get('next', '/home')
@@ -25,23 +28,25 @@ def login(request):
             request.session['grupo_id'] = datos_session.get('grupo_id').CodGrupo
             request.session['usuario_id'] = datos_session.get('usuario_id')
             request.session['usuario_nombre'] = datos_session.get('usuario_nombre')
-          
+
             return redirect('/home')
         else:
             message = "Usuario o clave incorrectos!"
-            
+
     form = LoginForm()
 
     context = {
         'form': form,
         'message': message,
-        
-        
     }
+
     return render(request, 'autenticacion/signin.html', context)
 
 
 @login_required
 def signout(request):
+    """
+    Vista para el cierre de sesión.
+    """
     logout_django(request)
     return redirect('/')

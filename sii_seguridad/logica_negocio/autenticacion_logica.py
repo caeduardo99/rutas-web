@@ -9,5 +9,13 @@ def autenticar(usuario, password):
 
 
 def verifica_modulo(usuario):
-    a = usuario
+    """
+    Verifica el módulo del usuario y realiza alguna lógica adicional.
+
+    :param usuario: Usuario para verificar el módulo.
+    """
+    # Realiza la lógica para verificar el módulo del usuario
+    # Puedes acceder a las propiedades y métodos del objeto 'usuario' para obtener información adicional
+    # ...
+
     pass

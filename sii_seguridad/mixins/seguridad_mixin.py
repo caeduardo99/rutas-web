@@ -2,14 +2,14 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
 
-
 class PermisosRequeridos(PermissionRequiredMixin):
     modules_required = None
 
     def get_modules_required(self):
         """
-        Override this method to override the permission_required attribute.
-        Must return an iterable.
+        Devuelve los módulos requeridos.
+        Anula este método para anular el atributo modules_required.
+        Debe devolver un iterable.
         """
         if self.modules_required is None:
             return []
@@ -21,8 +21,9 @@ class PermisosRequeridos(PermissionRequiredMixin):
 
     def get_permission_required(self):
         """
-        Override this method to override the permission_required attribute.
-        Must return an iterable.
+        Devuelve los permisos requeridos.
+        Anula este método para anular el atributo permission_required.
+        Debe devolver un iterable.
         """
         if self.permission_required is None:
             return []
@@ -33,7 +34,10 @@ class PermisosRequeridos(PermissionRequiredMixin):
         return perms
 
     def has_permission(self):
-
+        """
+        Verifica si el usuario tiene los permisos y módulos requeridos.
+        Devuelve True si el usuario tiene los permisos y módulos requeridos, False en caso contrario.
+        """
         if isinstance(self.request.user, AnonymousUser):
             return False
 
