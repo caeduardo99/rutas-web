@@ -7,6 +7,8 @@ Proyecto dedicado a supervisar el control de rutas por vendedor modulo (supervis
 
 ### Pre-requisitos 📋
 
+_Se necesita el ODBC Driver for SQL Server [ODBC](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-2017)_
+
 _Para un mejor desarollo, ambitos de prueba, o produccion necesitamos un entorno virtual_
 
 ```
